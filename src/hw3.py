@@ -2,40 +2,49 @@ import cv2
 import numpy as np
 import math
 from utils import *
-from Sift import *
-from OpenCVVideoStabilization import *
-from VideoStabilization import *
-from OpenCVImageTransform import *
-from ImageTransform import *
 
 ################  HW2  #####################
 # Nathana Facion                 RA:191079
 # Rafael Mariottini Tomazela     RA:192803
 ############################################
 
-def write_transform(path1, path2):
-    img1 = cv2.imread(path1)
-    img2 = cv2.imread(path2)
-    sift = Sift()
-    des1 = sift.get_descriptors(img1)
-    des2 = sift.get_descriptors(img2)
-    imt = ImageTransform()
-    im = imt.find_and_apply_transformation(des1, des2, img1, img2, 600)
-    write_image(4, im, True)
+
+def harris(imgpath):
+    img1 = cv2.imread(imgpath)
+
+    img_g_1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+
+    corner1 = cv2.cornerHarris(img_g_1, 2, 3, 0.04)
+
+    #corner1 = cv2.normalize(corner1, corner1, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32FC1)
+    #corner1 = cv2.convertScaleAbs(corner1)
+    h, w = corner1.shape
+    for y in range(h):
+        for x in range(w):
+            if corner1[y][x] > 10e-05:
+                img1 = cv2.circle(img1,(x, y), 2, (0,255,0), 1)
+
+    debug('corner1', img1)
+
+#seen in this tutorial https://pythonprogramming.net/corner-detection-python-opencv-tutorial/
+def corners(imgpath):
+    img1 = cv2.imread(imgpath)
+
+    img_g_1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+
+    corners = cv2.goodFeaturesToTrack(img_g_1, 100, 0.01, 10)
+    corners = np.int0(corners)
+    for corner in corners:
+        x,y = corner.ravel()
+        cv2.circle(img1,(x,y), 2, (0,255,0), 1)
+
+    debug('corner1', img1)
 
 def main():
-    print("First set of images on sift")
-    write_transform('input/p2-1-0.png', 'input/p2-1-1.png')
-
-    print("Second set of images on sift")
-    write_transform('input/p2-1-2.png', 'input/p2-1-3.png')
-
-    print("Third set of images on sift")
-    write_transform('input/p2-1-4.png', 'input/p2-1-5.png')
-
-
-    print("Stabilizaing video")
-    stab = VideoStabilization('input/p2-5-6.mp4', 'output/p2-5-0') #or 11 for nathana, 12 for mine again    
+    corners('input/templeRing/templeR0031.png')
+    corners('input/templeRing/templeR0030.png')
+    corners('input/templeRing/templeR0029.png')
+    
 
 if __name__ == '__main__':
    main()
