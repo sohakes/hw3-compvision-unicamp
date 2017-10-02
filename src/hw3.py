@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import math
 from utils import *
+from KLT import KLT
 
 ################  HW2  #####################
 # Nathana Facion                 RA:191079
@@ -41,9 +42,14 @@ def corners(imgpath):
     debug('corner1', img1)
 
 def main():
-    corners('input/templeRing/templeR0031.png')
-    corners('input/templeRing/templeR0030.png')
-    corners('input/templeRing/templeR0029.png')
+    #corners('input/dinoRing/dinoR0001.png')
+    #corners('input/dinoRing/dinoR0002.png')
+    #corners('input/dinoRing/dinoR0003.png')
+    imgs = [cv2.imread('input/dinoRing/dinoR0001.png'), cv2.imread('input/dinoRing/dinoR0002.png'),
+            cv2.imread('input/dinoRing/dinoR0003.png'),cv2.imread('input/dinoRing/dinoR0004.png')]
+    #imgs = [cv2.imread('input/p1-1-3.png'), cv2.imread('input/p1-1-4.png')]
+    klt = KLT()
+    klt.feature_tracking(imgs)
     
 
 if __name__ == '__main__':
