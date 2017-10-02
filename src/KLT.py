@@ -125,9 +125,13 @@ class KLT:
             u = v = 0
             for i in range(len(corners)):
                 x, y = corners[i]
-                u, v = moving_u_v[i]
+                res1 = moving_u_v[i]
+                if res1 is None:
+                    continue
+                u, v = res1
                 res = self._get_A_b(im1, im2, x, y, sobelx, sobely, u, v)
                 if res is None:
+                    moving_u_v[i] = None
                     continue
                 A, b = res
                 if self._is_invertible(A):
@@ -148,8 +152,16 @@ class KLT:
             #corners = corners_new
 
             #print('means u v', sumu/count, sumv/count)
-
-        return moving_u_v
+        moved_u_v = []
+        for i in range(len(corners)):
+            x, y = corners[i]
+            if moving_u_v[i] is None:
+                continue
+            u, v = moving_u_v[i]
+            #GET SUBPIXEL IF YOU WANNA FIX THIS
+            moved_u_v.append((int(round(x + u)),int(round(y + v)))) 
+        
+        return moved_u_v
 
 
 
@@ -168,19 +180,17 @@ class KLT:
             im1 = imgs[idx].copy()
             im2 = imgs[idx + 1].copy()
 
-            new_corners = []
-
             for i in range(len(corners)):
-                x, y = corners[i]
-                u, v = uvs[i]
-                #GET SUBPIXEL IF YOU WANNA FIX THIS
-                new_corners.append((int(round(x + u)),int(round(y + v)))) 
+                x, y = corners[i]                
                 cv2.circle(im1,(x,y), 2, (0,255,0), 1)
-                cv2.circle(im2,(int(round(x + u)),int(round(y + v))), 2, (0,255,0), 1)
+
+                if i < len(uvs):
+                    x1, y1 = uvs[i]
+                    cv2.circle(im2,(x1, y1), 2, (0,255,0), 1)
 
             debug('im1', im1)
             debug('im2', im2)
-            corners = new_corners
+            corners = uvs
 
 
 
