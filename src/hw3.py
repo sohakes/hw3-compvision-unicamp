@@ -3,6 +3,7 @@ import numpy as np
 import math
 from utils import *
 from KLT import KLT
+from Sfm import Sfm
 
 ################  HW2  #####################
 # Nathana Facion                 RA:191079
@@ -46,10 +47,20 @@ def main():
     #corners('input/dinoRing/dinoR0002.png')
     #corners('input/dinoRing/dinoR0003.png')
     imgs = [cv2.imread('input/dinoRing/dinoR0001.png'), cv2.imread('input/dinoRing/dinoR0002.png'),
-            cv2.imread('input/dinoRing/dinoR0003.png'),cv2.imread('input/dinoRing/dinoR0004.png')]
-    #imgs = [cv2.imread('input/p1-1-3.png'), cv2.imread('input/p1-1-4.png')]
+            cv2.imread('input/dinoRing/dinoR0003.png'),cv2.imread('input/dinoRing/dinoR0004.png'),
+            cv2.imread('input/dinoRing/dinoR0005.png'),cv2.imread('input/dinoRing/dinoR0006.png')]
+    #imgs = [cv2.imread('input/p1-1-1.png'), cv2.imread('input/p1-1-2.png')]
     klt = KLT()
-    klt.feature_tracking(imgs)
+    corners = None
+    try:
+        corners = np.load('corners.npy')
+        print('loaded')
+    except IOError:
+        corners = klt.feature_tracking(imgs)
+        np.save('corners.npy', corners)
+        print('ioerror')
+    sfm = Sfm()
+    sfm.structure_from_motion(imgs, corners)
     
 
 if __name__ == '__main__':

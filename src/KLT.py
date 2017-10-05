@@ -2,7 +2,6 @@ from utils import *
 import cv2
 import numpy as np
 import math
-from scipy import interpolate
 
 class KLT:
     #gotten from here https://stackoverflow.com/questions/17931613/how-to-decide-a-whether-a-matrix-is-singular-in-python-numpy
@@ -96,7 +95,7 @@ class KLT:
                     continue
                 imgradx[y,x] = (im[y,x + 1] - im[y,x - 1])/2
                 imgrady[y,x] = (im[y + 1,x] - im[y - 1,x])/2
-                print(im[y,x + 1],im[y,x - 1],imgradx[y,x])
+                #print(im[y,x + 1],im[y,x - 1],imgradx[y,x])
         return imgradx, imgrady
 
 
@@ -116,8 +115,9 @@ class KLT:
         #im1 = imgs[0].copy()
         #im2 = imgs[1].copy()
         moving_u_v = [(0,0)]*len(corners)
-        
-        for k in range(30):
+        lsumu = 0
+        lsumv = 0
+        for k in range(100):
             count = 0
             sumu = 0
             sumv = 0
@@ -134,34 +134,49 @@ class KLT:
                     moving_u_v[i] = None
                     continue
                 A, b = res
+                uv = None
                 if self._is_invertible(A):
                     uv = np.linalg.inv(A) * b
-                    #print('inv, b', np.linalg.inv(A), b)
-                    #print(uv)
-                    u, v = np.asscalar(uv[0][0]), np.asscalar(uv[1][0])
-                    moving_u_v[i] = (moving_u_v[i][0] + u, moving_u_v[i][1] + v)
-                    u, v = moving_u_v[i]
-                    #from_to.append(((x, y), (x + u, y + v)))
-                    #corners_new.append((int(round(x + u)),int(round(y + v))))
-                    
-                    
-                    #print('uv', u, v)
-                    count+=1
-                    sumu+=u
-                    sumv+=v
+                else:
+                    uv = np.linalg.pinv(A) * b
+
+                #print('inv, b', np.linalg.inv(A), b)
+                #print(uv)
+                u, v = np.asscalar(uv[0][0]), np.asscalar(uv[1][0])
+                moving_u_v[i] = (moving_u_v[i][0] + u, moving_u_v[i][1] + v)
+                u, v = moving_u_v[i]
+                #from_to.append(((x, y), (x + u, y + v)))
+                #corners_new.append((int(round(x + u)),int(round(y + v))))
+                
+                
+                #print('uv', u, v)
+                count+=1
+                sumu+=u
+                sumv+=v
             #corners = corners_new
 
-            #print('means u v', sumu/count, sumv/count)
+            print('means u v', sumu/count, sumv/count)
+
+            if abs((lsumu - sumu)/count) + abs((lsumv - sumv)/count) < 0.05:
+                #print('k', k)
+                break
+
+            lsumu = sumu
+            lsumv = sumv
+
+            
         moved_u_v = []
+        removed = []
         for i in range(len(corners)):
             x, y = corners[i]
             if moving_u_v[i] is None:
+                removed.append(i)
                 continue
             u, v = moving_u_v[i]
             #GET SUBPIXEL IF YOU WANNA FIX THIS
             moved_u_v.append((int(round(x + u)),int(round(y + v)))) 
-        
-        return moved_u_v
+        removed.reverse()
+        return moved_u_v, removed
 
 
 
@@ -172,11 +187,13 @@ class KLT:
         #    imgsbw.append(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY))
         #im1 = imgs[0].copy()
         img_g_1 = cv2.cvtColor(imgs[0], cv2.COLOR_BGR2GRAY)
+        
         corners = self._corners(img_g_1)
+        all_corners = [corners] #first keypoints
         
         for idx in range(len(imgs) - 1):
-            uvs = self._new_xy(imgs[idx], imgs[idx + 1], corners)
-            print(uvs)
+            uvs, removed = self._new_xy(imgs[idx], imgs[idx + 1], corners)
+            #print(uvs)
             im1 = imgs[idx].copy()
             im2 = imgs[idx + 1].copy()
 
@@ -190,7 +207,18 @@ class KLT:
 
             debug('im1', im1)
             debug('im2', im2)
+            cv2.imwrite('output/p3-'+ str(i) + '0.png', im1)
+            cv2.imwrite('output/p3-'+ str(i) + '1.png', im2)
             corners = uvs
+            for a_corners in all_corners:
+                for el in removed:
+                    del a_corners[el]
+            all_corners.append(corners)
+
+        for a_corners in all_corners:
+            assert len(a_corners) == len(all_corners[0])
+
+        return all_corners
 
 
 
