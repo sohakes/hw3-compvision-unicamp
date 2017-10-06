@@ -9,13 +9,17 @@ import math
 
 DEBUG = False
 NUMBER_FILE = -1
-QUESTION = [0, 0, 0, 0]
+QUESTION = [0, 0]
 
 
 def write_image(question, img, save):
     if save:
-        cv2.imwrite('output/p2-'+str(question)+'-'+str(QUESTION[question-1]) + '.png', img)
+        cv2.imwrite('output/p3-'+str(question)+'-'+str(QUESTION[question-1]) + '.png', img)
         QUESTION[question-1] += 1
+
+def get_file_name(question):
+    QUESTION[question-1] += 1
+    return 'output/p3-'+str(question)+'-'+str(QUESTION[question-1]) + '.ply'
 
 def numFile():
     global NUMBER_FILE

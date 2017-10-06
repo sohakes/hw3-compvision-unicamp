@@ -100,7 +100,7 @@ class KLT:
 
 
     
-    def _new_xy(self, im1o, im2o, corners):
+    def _new_xy(self, im1o, im2o, corners, iterations):
 
         #sobelx = cv2.Sobel(img_g_1,cv2.CV_64F,1,0,ksize=3)
         #sobely = cv2.Sobel(img_g_1,cv2.CV_64F,0,1,ksize=3)
@@ -117,7 +117,8 @@ class KLT:
         moving_u_v = [(0,0)]*len(corners)
         lsumu = 0
         lsumv = 0
-        for k in range(100):
+        #I could prune if still high after that, but I will not
+        for k in range(iterations):
             count = 0
             sumu = 0
             sumv = 0
@@ -155,7 +156,7 @@ class KLT:
                 sumv+=v
             #corners = corners_new
 
-            print('means u v', sumu/count, sumv/count)
+            #print('means u v', sumu/count, sumv/count)
 
             if abs((lsumu - sumu)/count) + abs((lsumv - sumv)/count) < 0.05:
                 #print('k', k)
@@ -180,7 +181,7 @@ class KLT:
 
 
 
-    def feature_tracking(self, imgs):
+    def feature_tracking(self, imgs, iterations):
         assert len(imgs) > 1
         #imgsbw = []
         #for im in imgs:
@@ -192,23 +193,10 @@ class KLT:
         all_corners = [corners] #first keypoints
         
         for idx in range(len(imgs) - 1):
-            uvs, removed = self._new_xy(imgs[idx], imgs[idx + 1], corners)
+            #print('frame', idx)
+            uvs, removed = self._new_xy(imgs[idx], imgs[idx + 1], corners, iterations)
             #print(uvs)
-            im1 = imgs[idx].copy()
-            im2 = imgs[idx + 1].copy()
 
-            for i in range(len(corners)):
-                x, y = corners[i]                
-                cv2.circle(im1,(x,y), 2, (0,255,0), 1)
-
-                if i < len(uvs):
-                    x1, y1 = uvs[i]
-                    cv2.circle(im2,(x1, y1), 2, (0,255,0), 1)
-
-            debug('im1', im1)
-            debug('im2', im2)
-            cv2.imwrite('output/p3-'+ str(i) + '0.png', im1)
-            cv2.imwrite('output/p3-'+ str(i) + '1.png', im2)
             corners = uvs
             for a_corners in all_corners:
                 for el in removed:
@@ -217,6 +205,12 @@ class KLT:
 
         for a_corners in all_corners:
             assert len(a_corners) == len(all_corners[0])
+
+        for i in range(len(all_corners)):
+            im = imgs[i].copy()
+            for x, y in all_corners[i]:
+                cv2.circle(im,(x,y), 2, (0,255,0), 1)
+            write_image(1, im, True)
 
         return all_corners
 
